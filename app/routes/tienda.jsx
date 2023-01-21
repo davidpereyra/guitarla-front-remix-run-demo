@@ -1,6 +1,13 @@
+import { getGuitarras } from "~/models/guitarras.server"
 
+export async function loader() {
+  const guitarras = await getGuitarras();
+  console.log(guitarras);
+  
+  return guitarras
+}
 
-const Tienda = () => {
+function Tienda() {
   return (
     <div>Tienda</div>
   )
