@@ -1,10 +1,13 @@
+import { useState, useEffect } from 'react'
 // para usar meta
 import {
     Meta,
     Links,
     Outlet,
     Scripts,
-    LiveReload
+    LiveReload,
+    useCatch,
+    Link
 } from '@remix-run/react'
 
 import styles from '~/styles/index.css'
@@ -49,9 +52,62 @@ export function links(){
 
 
 export default function App(){
+    
+    const carritoLS = typeof window !== 'undefined' && JSON.parse(localStorage.getItem('carrito')) || []
+    
+    const [carrito, setCarrito] = useState(carritoLS);
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('carrito', JSON.stringify(carrito))
+        }
+      }, [carrito])
+      
+
+    const agregarCarrito = guitarraSeleccionada => {
+        if(carrito.some(guitarraState => guitarraState.id === guitarraSeleccionada.id)){
+            // iterar sobre el arreglo e identificar el elemento duplicado
+            const carritoActualizado = carrito.map(guitarraState => {
+            if(guitarraState.id === guitarraSeleccionada.id){
+                // reescribir la cantidad
+                guitarraState.cantidad = guitarraSeleccionada.cantidad;
+                // en caso de que cada vez que se presione  el boton agregar al carrito se necesite sumar ese producto
+                // guitarraState.cantidad += guitarraSeleccionada.cantidad;
+            }
+            return guitarraState;
+            })
+            setCarrito(carritoActualizado);
+        } else{
+            // Registro nuevo, se agrega al carrito
+            setCarrito([...carrito, guitarraSeleccionada]);
+        }
+    }
+    
+    const actualizarCantidad = guitarra => {
+        const carritoActualizado = carrito.map(guitarraState => {
+            if (guitarraState.id === guitarra.id) {
+                guitarraState.cantidad = guitarra.cantidad
+            }
+            return guitarraState;
+        })
+        setCarrito(carritoActualizado);
+    }
+
+    const eliminarGuitarra = id => {
+        const carritoActualizado = carrito.filter(guitarraState => guitarraState.id !== id)
+        setCarrito(carritoActualizado)
+    }
+
     return(
         <Document>
-            <Outlet />
+            <Outlet 
+                context={{
+                    agregarCarrito,
+                    carrito,
+                    actualizarCantidad,
+                    eliminarGuitarra
+                }}
+            />
         </Document>
     )
 }
@@ -74,3 +130,31 @@ function Document({children}){
         </html>
     )
 }
+
+
+
+/* Manejo de errores */
+
+export function CatchBoundary(){
+    const error = useCatch()
+    return (
+        <Document>
+            <p className='error'>
+                {error.status} {error.statusText}
+            </p>
+            <Link to="/" className='error-enlace'>Tal vez quieras volver a la pagina principal</Link>
+        </Document>
+    )
+}
+
+export function ErrorBoundary({error}){
+    return (
+        <Document>
+            <p className='error'>
+                {error.status} {error.statusText}
+            </p>
+            <Link to="/" className='error-enlace'>Tal vez quieras volver a la pagina principal</Link>
+        </Document>
+    )
+}
+
